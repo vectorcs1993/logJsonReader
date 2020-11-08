@@ -72,10 +72,11 @@ class ChartGraph extends ScaleActiveObject {
   void draw() { 
     pushMatrix();
     pushStyle();
-    clip(x, y, width+1, height+1);
     scale(getScaleX(), getScaleY());
+    clip(x*getScaleX(), y*getScaleY(), (width+1)*getScaleX(), (height+1)*getScaleY());
+    
     if (!chartsList.isEmpty()) {
-      cursor=int(constrain(mouseX-x, 0, width));
+      cursor=int(constrain((mouseX/getScaleX())-x, 0, width));
       fill(color(60));
       rect(x, y, width, height-22);
       float prevX=0, prevY=0;
@@ -83,7 +84,7 @@ class ChartGraph extends ScaleActiveObject {
         ChartList chart = chartsList.get(i); //определяем текущий график для отрисовки
         for (int current = 0; current<constrain(width/scaleX, 0, chart.size()-1); current++) {  //перебираем все замеры
           Chart point = chart.get(constrain(current+posX, 0, chart.size()-1));  //определяем замер
-          float point_value=y+height-map(point.parameter, chart.min, chart.max, height/2, height-10);
+          float point_value=y+height-map(point.parameter, chart.min, chart.max, 30, height-10);
           if (i==0)
           stroke(white);
           else if (i==1)
@@ -110,7 +111,7 @@ class ChartGraph extends ScaleActiveObject {
           fill(white);
           Chart chart = list.get(constrain(cursorPos,0,list.size()-1));
           ellipseMode(CENTER);
-          ellipse(x+cursor, y+height-map(chart.parameter, list.min, list.max, height/2, height-10), 5, 5);
+          ellipse(x+cursor, y+height-map(chart.parameter, list.min, list.max, 30 , height-10), 5, 5);
         }
 
         fill(black);
@@ -120,9 +121,9 @@ class ChartGraph extends ScaleActiveObject {
           posText-=textWidth(textCursor)+10;
         fill(white);
         stroke(black);
-        rect(posText-3, y+constrain(mouseY-y+32, 20, height-55)-16, textWidth(textCursor)+6, 20);
+        rect(posText-3, y+constrain((mouseY/getScaleY())-y+32, 20, height-55)-16, textWidth(textCursor)+6, 20);
         fill(black);
-        text(textCursor, posText, y+constrain(mouseY-y+32, 20, height-55));
+        text(textCursor, posText, y+constrain((mouseY/getScaleY())-y+32, 20, height-55));
       }
       fill(white);
       rect(x+map(posX, 0, chartsList.get(0).size(), 0, width), y+height-20, getWidthScroll(), 20);
@@ -132,7 +133,7 @@ class ChartGraph extends ScaleActiveObject {
     popMatrix();
   }
   void  mouseDragged (float mx, float my) {
-    if (mouseY<y+height-20) {
+    if ((mouseY/getScaleY())<y+height-20) {
       if (mouseButton==RIGHT) {
         if (mx>dragged)
           posX-=2;
@@ -158,7 +159,7 @@ class ChartGraph extends ScaleActiveObject {
     }
   }
   void setPosX() {
-    posX=int(constrain(map(mouseX-getWidthScroll()/2, x, x+width, 0, chartsList.get(0).size()-1), 0, chartsList.get(0).size()-width));
+    posX=int(constrain(map((mouseX/getScaleX())-getWidthScroll()/2, x, x+width, 0, chartsList.get(0).size()-1), 0, chartsList.get(0).size()-width));
   }
   float getWidthScroll() {
     return constrain(width, 0, chartsList.get(0).size()/width+138);
