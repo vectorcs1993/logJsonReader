@@ -4,8 +4,7 @@ class Chart {
 
   int parameter;
   Date date;
-
-
+  
   Chart(Date date, int parameter) {
     this.parameter=parameter;
     this.date=date;
@@ -15,7 +14,7 @@ class Chart {
 class ChartList extends ArrayList<Chart> {
   String label, block;
   float min, max;
- 
+
   ChartList(String block, String label) {
     this.label=label;  
     this.block=block;
@@ -42,7 +41,7 @@ class ChartList extends ArrayList<Chart> {
 class ChartGraph extends ScaleActiveObject {
   float dragged;
   int cursor, posX, scaleX, cursorPos;
- private ArrayList <ChartList> chartsList;
+  private ArrayList <ChartList> chartsList;
   ChartGraph(float x, float y, float w, float h) {
     super(x, y, w, h);
     chartsList = new ArrayList <ChartList>();
@@ -73,10 +72,10 @@ class ChartGraph extends ScaleActiveObject {
     pushMatrix();
     pushStyle();
     scale(getScaleX(), getScaleY());
-    clip(x*getScaleX(), y*getScaleY(), (width+1)*getScaleX(), (height+1)*getScaleY());
-    
+    clip((x-1)*getScaleX(), (y-1)*getScaleY(), (width+2)*getScaleX(), (height+2)*getScaleY());
     if (!chartsList.isEmpty()) {
       cursor=int(constrain((mouseX/getScaleX())-x, 0, width));
+      stroke(white);
       fill(color(60));
       rect(x, y, width, height-22);
       float prevX=0, prevY=0;
@@ -86,15 +85,17 @@ class ChartGraph extends ScaleActiveObject {
           Chart point = chart.get(constrain(current+posX, 0, chart.size()-1));  //определяем замер
           float point_value=y+height-map(point.parameter, chart.min, chart.max, 30, height-10);
           if (i==0)
-          stroke(white);
+            stroke(white);
           else if (i==1)
-          stroke(blue);
+            stroke(blue);
           else if (i==2)
-          stroke(red);
-           else if (i==3)
-          stroke(green);
-           else if (i==4)
-          stroke(gray);
+            stroke(red);
+          else if (i==3)
+            stroke(green);
+          else if (i==4)
+            stroke(gray);
+          else if (i==5)
+            stroke(yellow);
           if (current==0)
             point(x+(current*scaleX), point_value);
           else 
@@ -109,11 +110,10 @@ class ChartGraph extends ScaleActiveObject {
         cursorPos = constrain(posX+cursor/scaleX, 0, chartsList.get(0).size()-1);
         for (ChartList list : chartsList) {
           fill(white);
-          Chart chart = list.get(constrain(cursorPos,0,list.size()-1));
+          Chart chart = list.get(constrain(cursorPos, 0, list.size()-1));
           ellipseMode(CENTER);
-          ellipse(x+cursor, y+height-map(chart.parameter, list.min, list.max, 30 , height-10), 5, 5);
+          ellipse(x+cursor, y+height-map(chart.parameter, list.min, list.max, 30, height-10), 5, 5);
         }
-
         fill(black);
         String textCursor = "time: "+chartsList.get(0).get(cursorPos).date.getDate();
         float posText = x+cursor+5;
@@ -125,8 +125,11 @@ class ChartGraph extends ScaleActiveObject {
         fill(black);
         text(textCursor, posText, y+constrain((mouseY/getScaleY())-y+32, 20, height-55));
       }
-      fill(white);
+      stroke(white);
+      fill(color(60));
       rect(x+map(posX, 0, chartsList.get(0).size(), 0, width), y+height-20, getWidthScroll(), 20);
+      
+      
     }
     noClip();
     popStyle();
@@ -142,16 +145,20 @@ class ChartGraph extends ScaleActiveObject {
         posX=int(constrain(posX, 0, chartsList.get(0).size()-width));
         dragged=mx;
       }
-    } else
-      setPosX();
+    } else {
+      if (mouseButton==LEFT) 
+        setPosX();
+    }
   }
   void mousePressed() {
-    if (mouseY<y+height-20)
-      dragged=mouseX; 
-    if (mouseX>x && mouseY>y+height-20 && mouseX<x+width)
-      setPosX();
+    if (mouseButton==RIGHT) {
+      if (mouseY<y+height-20)
+        dragged=mouseX;
+    } else if (mouseButton==LEFT) {
+      if (mouseX>x*getScaleX() && mouseY>(y+height-20)*getScaleY() && mouseX<(x+width)*getScaleX())
+        setPosX();
+    }
   }
-
   void mouseScrolled (float step) {
     if (hover) {
       scaleX+=-step;
@@ -165,11 +172,8 @@ class ChartGraph extends ScaleActiveObject {
     return constrain(width, 0, chartsList.get(0).size()/width+138);
   }
 }
-
-
 class Date {
   int second, minute, hour, day, month, year;
-
   Date (int second, int minute, int hour, int day, int month, int year) {
     this.second=second;
     this.minute=minute;
@@ -178,8 +182,6 @@ class Date {
     this.month=month;
     this.year=year;
   }
-
-
   String isNotZero(int num) {
     if (num<10)
       return "0"+str(num);

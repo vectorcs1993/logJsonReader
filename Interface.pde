@@ -1,5 +1,5 @@
 Listbox blocksList, parametersList;
-SimpleButton loadFile, clear, addChart, removeChart, clearChart;
+SimpleButton loadFile, clear, addChart, removeChart, clearChart, renameBlock, renameParameter;
 
 color blue = color(0, 0, 255);                                                                               //задание цветовых констант
 color red = color(255, 0, 0);
@@ -14,9 +14,36 @@ void setupInterface() {
   Interactive.make(this);
   blocksList=new Listbox(0, 52, 128, 192, Listbox.BLOCKS, "Блоки:"); 
   parametersList=new Listbox(129, 52, 192, 192, Listbox.PARAMETERS, "Параметры:");
+
+  renameBlock = new SimpleButton(600, 52, 192, 30, "Переименовать блок", new Runnable() {
+    public void run() {
+      if (blocksList.select!=null) {
+        String label = blocksList.select.label;
+        String input = booster.showTextInputDialog("Введите название блока:");
+        if (input!=null) {
+        data.tags.set(label, input);
+        data.saveTagsForJSON();
+        }
+      }
+    }
+  }
+  );
+renameParameter = new SimpleButton(600, 84, 192, 30, "Переименовать параметр", new Runnable() {
+    public void run() {
+      if (blocksList.select!=null) {
+        String label = parametersList.select.label;
+        String input = booster.showTextInputDialog("Введите название параметра:");
+        if (input!=null) {
+        data.tags.set(label, input);
+        data.saveTagsForJSON();
+        }
+      }
+    }
+  }
+  );
   loadFile = new SimpleButton(1, 1, 160, 30, "Загрузить JSON", new Runnable() {
     public void run() {
-       data.clearData();
+      data.clearData();
       selectInput("Select a file is JSON data:", "logSelected");
     }
   }
@@ -27,27 +54,24 @@ void setupInterface() {
     }
   }
   );
-   addChart = new SimpleButton(323, 156, 160, 30, "Добавить в график", new Runnable() {
+  addChart = new SimpleButton(323, 156, 160, 30, "Добавить в график", new Runnable() {
     public void run() {
-       String blockStr = blocksList.select.label;
+      String blockStr = blocksList.select.label;
       String parameter = parametersList.select.label;
-      data.currentGraph.addChart(data.getChartList(blockStr,parameter));
+      data.currentGraph.addChart(data.getChartList(blockStr, parameter));
     }
   }
   );
-     removeChart = new SimpleButton(323, 187, 160, 30, "Убрать из графика", new Runnable() {
+  removeChart = new SimpleButton(323, 187, 160, 30, "Убрать из графика", new Runnable() {
     public void run() {
-       String blockStr = blocksList.select.label;
+      String blockStr = blocksList.select.label;
       String parameter = parametersList.select.label;
       data.currentGraph.removeChart(blockStr, parameter);
     }
   }
   );
-     clearChart = new SimpleButton(323, 218, 160, 30, "Очистить график", new Runnable() {
+  clearChart = new SimpleButton(323, 218, 160, 30, "Очистить график", new Runnable() {
     public void run() {
-     //  String blockStr = blocksList.select.label;
-      //String parameter = parametersList.select.label;
-      
       data.currentGraph.chartsList.clear();
     }
   }
@@ -119,7 +143,7 @@ class SimpleButton extends ScaleActiveObject {
     textAlign(CENTER, CENTER);
     if ( on ) fill(black);
     else fill(white);
- 
+
     text(text, x+this.width/2, y+this.height/2-textDescent());
     popStyle();
     popMatrix();
@@ -182,7 +206,7 @@ class Listbox extends ScaleActiveObject {
     update();
   }
 
-  void loadHelpMessages(StringList list) {
+  void load(StringList list) {
     int prev_select = getPrevSelect();  
     for (String part : list) {
       addItem(part, "");
@@ -240,10 +264,10 @@ class Listbox extends ScaleActiveObject {
         select = items.get(constrain(pressed, 0, items.size()-1));
         onClick(entry);
       } else {
-      select=null;
+        select=null;
         onClick(entry);
-      }  
-  }
+      }
+    }
   }
   boolean hoverNoSlider() {
     if (mouseX<(x+width-20)*getScaleX())
@@ -272,8 +296,12 @@ class Listbox extends ScaleActiveObject {
         if (i+listStartAt==items.indexOf(select))
           fill(black);
         else 
-        fill(((i+listStartAt) == hoverItem && hoverNoSlider() && isActiveSelect()) ? black : white);
-        text(items.get(constrain(i+listStartAt, 0, items.size()-1)).label, x+5, y+(i+1)*itemHeight-5 );
+        fill(((i+listStartAt) == hoverItem && hoverNoSlider() && isActiveSelect()) ? black : white);         
+        String textLabel = items.get(constrain(i+listStartAt, 0, items.size()-1)).label;
+        if (data.tags.hasKey(textLabel))
+          text(data.tags.get(textLabel), x+5, y+(i+1)*itemHeight-5 );
+        else
+          text(textLabel, x+5, y+(i+1)*itemHeight-5 );
       }
     }
     fill(white);
@@ -291,8 +319,6 @@ class Listbox extends ScaleActiveObject {
   }  
   void onClick(int entry) {
     if (entry==PARAMETERS) {
-     
-
     } else    if (entry==BLOCKS) {
       parametersList.select=null;
       parametersList.select=null;
@@ -308,7 +334,6 @@ void showScaleText(String text, float x, float y) {
   text(text, 0, 0);
   popMatrix();
 }
-
 void showScaleText(String text, float x, float y, color _color) {
   pushMatrix(); 
   fill(_color);

@@ -4,6 +4,7 @@ class Data extends JSONArray {
   StringList allBlocks;
   static final String KEY_PRIMARY = "NumberBlock", DATE="DateTime";
   ArrayList <ChartList> chartsList;
+  StringDict tags;
   ChartGraph currentGraph;
   File log;
   Data() {
@@ -11,6 +12,7 @@ class Data extends JSONArray {
     chartsList = new ArrayList <ChartList>();
     allBlocks = new StringList();
     currentGraph=new ChartGraph (128, 256, 664, 320);
+    tags = new StringDict();
     log=null;
   }
 
@@ -24,9 +26,7 @@ class Data extends JSONArray {
     for (int i=this.size()-1; i>0; i--) //удаляет все JSON объекты из собственного списка
       this.remove(i);
   }
-
-
-  public void init(File log) {
+  public void initData(File log) {
     this.log=log;
     String [] parse = loadStrings(log);
     for (String str : parse) {
@@ -39,22 +39,32 @@ class Data extends JSONArray {
       }
     }
     allBlocks.sort();
-    blocksList.loadHelpMessages(allBlocks);
+    blocksList.load(allBlocks);
     for (String block : allBlocks) {
       ParamList allParametersForBlock = getListBlocks(int(block));
       for (String parameter : allParametersForBlock.getParameters())
         chartsList.add(allParametersForBlock.createChart(block, parameter));
     }
+    JSONObject label= loadJSONObject("data/labels.json");                      //создает словарь тэгов
+    for (java.lang.Object s : label.keys()) {
+      String keyValue = s.toString();
+      this.tags.set(keyValue, label.getString(keyValue));
+    }
   }
-
-  ChartList getChartList(String block, String parameter) { //возвращает график по блоку и параметру
+  public void saveTagsForJSON() {                                              //сохраняет пространство имен в файл data/labels.json
+    JSONObject labels = new JSONObject();
+    for (String part : tags.keys()) 
+      labels.setString(part, tags.get(part));
+    saveJSONObject(labels, "data/labels.json");
+  }
+  ChartList getChartList(String block, String parameter) {                     //возвращает график по блоку и параметру
     for (ChartList charts : chartsList) { 
       if (charts.block==block && charts.label==parameter)
         return charts;
     }
     return null;
   }
-  ParamList getListBlocks(int num) {
+  ParamList getListBlocks(int num) {       
     ParamList objects= new ParamList(); 
     for (int i = 0; i < this.size(); i++) {
       JSONObject object = this.getJSONObject(i);
@@ -106,5 +116,5 @@ class ParamList extends ArrayList <JSONObject> {
 }
 void logSelected(File selection) {
   if (selection != null) 
-    data.init(selection);
+    data.initData(selection);
 }
