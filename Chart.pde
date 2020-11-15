@@ -4,7 +4,8 @@ class Chart {
 
   int parameter;
   Date date;
-  
+
+
   Chart(Date date, int parameter) {
     this.parameter=parameter;
     this.date=date;
@@ -12,18 +13,22 @@ class Chart {
 }
 
 class ChartList extends ArrayList<Chart> {
-  String label, block;
+  String label, block, type;
   float min, max;
+  float prevX, prevY;  //служебные
+  static final int DECIMAL=0, BINARY=1, HEX=2, NONE=3;
 
   ChartList(String block, String label) {
     this.label=label;  
     this.block=block;
     min = max = -1;
+    type="NONE";
   }
   void update() {
     min = getMin();
     max = getMax();
   }
+
   IntList getIntList() {
     IntList list = new IntList();
     for (Chart chart : this)
@@ -42,6 +47,10 @@ class ChartGraph extends ScaleActiveObject {
   float dragged;
   int cursor, posX, scaleX, cursorPos;
   private ArrayList <ChartList> chartsList;
+
+  color colorBackground;
+  color [] colors = new color [4];
+
   ChartGraph(float x, float y, float w, float h) {
     super(x, y, w, h);
     chartsList = new ArrayList <ChartList>();
@@ -50,7 +59,20 @@ class ChartGraph extends ScaleActiveObject {
     setActive(false);
     dragged=0;
     cursorPos=0;
+    colorBackground= color(60);
+    colors[0]=white;
+    colors[1]=blue;
+    colors[2]=red;
+    colors[3]=green;
   }
+
+  StringList getChartStringList() {
+    StringList charts = new StringList();
+    for (ChartList list : chartsList) 
+      charts.append(list.label);
+    return charts;
+  }
+
   void addChart(ChartList chart) {
     boolean add=true;
     for (int i = chartsList.size()-1; i>=0; i--) {
@@ -61,6 +83,8 @@ class ChartGraph extends ScaleActiveObject {
     if (add)
       chartsList.add(chart);
   }
+
+
   void removeChart(String block, String parameter) {
     for (int i = chartsList.size()-1; i>=0; i--) {
       ChartList list = chartsList.get(i);
@@ -68,40 +92,39 @@ class ChartGraph extends ScaleActiveObject {
         chartsList.remove(list);
     }
   }
+
+
+
   void draw() { 
     pushMatrix();
     pushStyle();
-    scale(getScaleX(), getScaleY());
     clip((x-1)*getScaleX(), (y-1)*getScaleY(), (width+2)*getScaleX(), (height+2)*getScaleY());
-    if (!chartsList.isEmpty()) {
+    scale(getScaleX(), getScaleY());
+    if (chartsList.size()>0) {
       cursor=int(constrain((mouseX/getScaleX())-x, 0, width));
       stroke(white);
-      fill(color(60));
+      fill(colorBackground);
       rect(x, y, width, height-22);
-      float prevX=0, prevY=0;
-      for (int i=0; i<chartsList.size(); i++) {  //перебираем все добавленные графики
-        ChartList chart = chartsList.get(i); //определяем текущий график для отрисовки
-        for (int current = 0; current<constrain(width/scaleX, 0, chart.size()-1); current++) {  //перебираем все замеры
+      for (ChartList chart : chartsList) { 
+        chart.prevX=0;
+        chart.prevY=0;
+      }
+      for (int current = 0; current<width; current++) {  //перебираем все замеры
+        for (int i=0; i<chartsList.size(); i++) {  //перебираем все добавленные графики
+          ChartList chart = chartsList.get(i); //определяем текущий график для отрисовки
           Chart point = chart.get(constrain(current+posX, 0, chart.size()-1));  //определяем замер
-          float point_value=y+height-map(point.parameter, chart.min, chart.max, 30, height-10);
-          if (i==0)
-            stroke(white);
-          else if (i==1)
-            stroke(blue);
-          else if (i==2)
-            stroke(red);
-          else if (i==3)
-            stroke(green);
-          else if (i==4)
-            stroke(gray);
-          else if (i==5)
-            stroke(yellow);
+          float point_value=y+height-map(point.parameter, 0, chart.max, 30, height-10);
+
+          stroke(colors[i]);
+          if (chartsList.indexOf(chart)==currentsCharts.getNumberSelect())
+            strokeWeight(3);
           if (current==0)
             point(x+(current*scaleX), point_value);
           else 
-          line(prevX, prevY, x+(current*scaleX), point_value);
-          prevX= x+(current*scaleX);
-          prevY= point_value;
+          line(chart.prevX, chart.prevY, x+(current*scaleX), point_value);
+          strokeWeight(1);
+          chart.prevX= x+(current*scaleX);
+          chart.prevY= point_value;
         }
       }
       if (hover) {
@@ -112,7 +135,7 @@ class ChartGraph extends ScaleActiveObject {
           fill(white);
           Chart chart = list.get(constrain(cursorPos, 0, list.size()-1));
           ellipseMode(CENTER);
-          ellipse(x+cursor, y+height-map(chart.parameter, list.min, list.max, 30, height-10), 5, 5);
+          ellipse(x+cursor, y+height-map(chart.parameter, 0, list.max, 30, height-10), 5, 5);
         }
         fill(black);
         String textCursor = "time: "+chartsList.get(0).get(cursorPos).date.getDate();
@@ -125,11 +148,13 @@ class ChartGraph extends ScaleActiveObject {
         fill(black);
         text(textCursor, posText, y+constrain((mouseY/getScaleY())-y+32, 20, height-55));
       }
-      stroke(white);
-      fill(color(60));
-      rect(x+map(posX, 0, chartsList.get(0).size(), 0, width), y+height-20, getWidthScroll(), 20);
-      
-      
+      if (!chartsList.isEmpty()) {
+        if (!chartsList.get(0).isEmpty()) {
+          stroke(white);
+          fill(color(60));
+          rect(x+map(posX, 0, chartsList.get(0).size()-1, 0, width), y+height-20, getWidthScroll(), 20);
+        }
+      }
     }
     noClip();
     popStyle();
@@ -142,7 +167,7 @@ class ChartGraph extends ScaleActiveObject {
           posX-=2;
         else
           posX+=2;
-        posX=int(constrain(posX, 0, chartsList.get(0).size()-width));
+        constrainPosX();
         dragged=mx;
       }
     } else {
@@ -163,13 +188,19 @@ class ChartGraph extends ScaleActiveObject {
     if (hover) {
       scaleX+=-step;
       scaleX=constrain(scaleX, 1, 10);
+      constrainPosX();
     }
   }
+  void constrainPosX() {
+    posX=int(constrain(posX, 0, chartsList.get(0).size()-(width/scaleX)));
+  }
   void setPosX() {
-    posX=int(constrain(map((mouseX/getScaleX())-getWidthScroll()/2, x, x+width, 0, chartsList.get(0).size()-1), 0, chartsList.get(0).size()-width));
+   posX = int(map((mouseX/getScaleX())-getWidthScroll()/2, x, x+width, 0, chartsList.get(0).size()-1));
+   constrainPosX();
   }
   float getWidthScroll() {
-    return constrain(width, 0, chartsList.get(0).size()/width+138);
+    float widthScale = chartsList.get(0).size()*scaleX;
+    return width/constrain(widthScale/width, 0, widthScale);
   }
 }
 class Date {

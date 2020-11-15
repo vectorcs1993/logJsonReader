@@ -1,89 +1,86 @@
 import de.bezier.guido.*;
 import java.util.Iterator;
-
 import uibooster.*;
+import uibooster.components.*;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JLabel;
+import java.awt.Font;
+import javax.swing.JMenuItem;
+import java.awt.Color;
+
+MenuBar mainMenu;
 
 UiBooster booster;
+WaitingDialog waitingDialog;
 Data data;
 PApplet context = this;
 int _sizeX=800;
 int _sizeY=600;
+Font font;
+PImage DEC, BINARY, HEX;
+
 
 void settings() {
-  size(_sizeX, _sizeY, P2D);
-  smooth(0);
-  PJOGL.setIcon("data/icon.png");
-
-  booster = new UiBooster();
+  size(_sizeX, _sizeY, JAVA2D);
+  noSmooth ();
 }
-
 void setup() {
+  DEC = loadImage("data/decimal.png");
+  BINARY = loadImage("data/binary.png");
+  HEX = loadImage("data/hex.png");
+  mainMenu= new MenuBar(this);
+  surface.setIcon(loadImage("data/icon.png"));
   surface.setResizable(true);
+  surface.setTitle("logJsonReader");
+  booster = new UiBooster();
   setupInterface();
   data = new Data ();
-  //  selectInput("Select a file is JSON data:", "logSelected");
+  font = new Font("Verdana", Font.PLAIN, 12);
+  textSize(13);
 }
-
 void draw() {
   background(black);
-  renameBlock.setActive(false);
-  renameParameter.setActive(false);
-  clearChart.setActive(false);
+  mainMenu.update();
   addChart.setActive(false);
   removeChart.setActive(false);
   data.currentGraph.setActive(false); 
   parametersList.setActive(false);
   blocksList.setActive(false);
+  currentsCharts.setActive(false);
   if (data.log!=null) {
     blocksList.setActive(true);
     parametersList.setActive(true);
-
     if (blocksList.select!=null) {
-      renameBlock.setActive(true);
       String blockStr = blocksList.select.label;
       ParamList allParametersForBlock = data.getListBlocks(int(blockStr));
       StringList list = allParametersForBlock.getParameters();
       list.sort();
       parametersList.load(list);
       if (parametersList.select!=null) {
-        data.currentGraph.setActive(true);
-        clearChart.setActive(true);
-        addChart.setActive(true);
-        removeChart.setActive(true);
-        renameParameter.setActive(true);
-        if (!data.currentGraph.chartsList.isEmpty()) {
-          float y = 280; 
-          for (ChartList chart : data.currentGraph.chartsList) {
-            int number = data.currentGraph.chartsList.indexOf(chart);
-            color fill = 0;
-            if (number==0)
-              fill=white;
-            else if (number==1)
-              fill=blue;
-            else if (number==2)
-              fill=red;
-            else if (number==3)
-              fill=green;
-            else if (number==4)
-              fill=gray;
-            else if (number==5)
-              fill=yellow;
-            String textLabel = chart.label;
-            if (data.tags.hasKey(textLabel))
-              showScaleText(data.tags.get(textLabel)+":\n"+str(chart.get(constrain(data.currentGraph.cursorPos, 0, chart.size()-1)).parameter), 15, y+(number*32), fill);
-            else
-              showScaleText(chart.label+":\n"+str(chart.get(constrain(data.currentGraph.cursorPos, 0, chart.size()-1)).parameter), 15, y+(number*32), fill);
-          }
-        } else 
-        showScaleText("Добавьте параметр в график", width/2-100, height/2);
-      } else
-        showScaleText("Выберите параметр", width/2-100, height/2);
+        if (data.currentGraph.chartsList.isEmpty())
+        showScaleText("Для просмотра параметра добавьте его в график", 260, 288);
+        if (!data.currentGraph.chartsList.contains(data.getChartList(blockStr, parametersList.select.label)))
+          addChart.setActive(true);
+      } else 
+      showScaleText("Выберите параметр", 260, 288);
     } else {
       parametersList.items.clear();
-      showScaleText("Выберите блок", width/2-100, height/2);
+      showScaleText("Выберите блок", 260, 288);
+    }
+    data.currentGraph.setActive(true);
+    if (!data.currentGraph.chartsList.isEmpty()) {
+      currentsCharts.load(data.currentGraph.getChartStringList());
+      currentsCharts.setActive(true);
+      if (currentsCharts.select!=null)
+        removeChart.setActive(true);
     }
   } else
-    showScaleText("Загрузите лог для просмотра графика", width/2-100, height/2);
+    showScaleText("Загрузите лог для просмотра графика", 260, 288);
   String text="";
   if (data.log!=null && data.chartsList.size()>0) {
     text+="log file: "+data.log.getName()+"\n"+
@@ -99,4 +96,8 @@ void draw() {
 
   showScaleText("FPS: "+int(frameRate)+"\n"
     +"mouse X: "+mouseX+"\n"+"mouse Y: "+mouseY, 649, 196);
+}
+
+void mousePressed() {
+  mainMenu.close();
 }
