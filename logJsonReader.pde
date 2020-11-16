@@ -52,6 +52,8 @@ void draw() {
   parametersList.setActive(false);
   blocksList.setActive(false);
   currentsCharts.setActive(false);
+    scaleXUp.setActive(false);
+      scaleXDown.setActive(false);
   if (data.log!=null) {
     blocksList.setActive(true);
     parametersList.setActive(true);
@@ -74,6 +76,8 @@ void draw() {
     }
     data.currentGraph.setActive(true);
     if (!data.currentGraph.chartsList.isEmpty()) {
+         scaleXUp.setActive(true);
+      scaleXDown.setActive(true);
       currentsCharts.load(data.currentGraph.getChartStringList());
       currentsCharts.setActive(true);
       if (currentsCharts.select!=null)

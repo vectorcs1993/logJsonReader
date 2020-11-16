@@ -1,14 +1,11 @@
 Listbox blocksList, parametersList, currentsCharts;
-SimpleButton addChart, removeChart;
+SimpleButton addChart, removeChart, scaleXUp, scaleXDown, scaleYUp, scaleYDown;
 
 color blue = color(0, 0, 255);                                                                               //задание цветовых констант
 color red = color(255, 0, 0);
 color green = color(0, 255, 0);
 color white = color(255, 255, 255);
 color black = color(0, 0, 0);
-
-
-
 
 void setupInterface() {
   Interactive.make(this);
@@ -24,6 +21,30 @@ void setupInterface() {
         data.currentGraph.addChart(data.getChartList(blockStr, parameter));
       } else
         booster.showInfoDialog("Предельное количество графиков достигнуто");
+    }
+  }
+  );
+  scaleXUp = new SimpleButton(763, 256, 32, 32, "X+", new Runnable() {
+    public void run() {
+      data.currentGraph.scaleX(-1);
+    }
+  }
+  );
+  scaleXDown = new SimpleButton(763, 290, 32, 32, "X-", new Runnable() {
+    public void run() {
+      data.currentGraph.scaleX(1);
+    }
+  }
+  );
+  scaleYUp = new SimpleButton(763, 324, 32, 32, "Y+", new Runnable() {
+    public void run() {
+      data.currentGraph.scaleY(-1);
+    }
+  }
+  );
+  scaleYDown = new SimpleButton(763, 358, 32, 32, "Y-", new Runnable() {
+    public void run() {
+      data.currentGraph.scaleY(1);
     }
   }
   );
@@ -267,7 +288,7 @@ class Listbox extends ScaleActiveObject {
           for (ChartList chart : data.currentGraph.chartsList) {
             if (chart.label.equals(textLabel)) {
               int number = data.currentGraph.chartsList.indexOf(chart);
-            
+
               textDown= str(chart.get(constrain(data.currentGraph.cursorPos, 0, chart.size()-1)).parameter);
               fill(data.currentGraph.colors[number]);
               break;
